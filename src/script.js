@@ -22,12 +22,11 @@ async function loadTasks() {
             .sort((a, b) => b.memory_mb - a.memory_mb)
             .forEach(proc => {
                 const row = document.createElement('tr');
-                const cpuClass = proc.cpu_percent > 10 ? 'high-cpu' : '';
                 row.innerHTML = `
                     <td title="${proc.name}">${proc.name.slice(0, 40)}${proc.name.length > 40 ? '...' : ''}</td>
                     <td>${proc.pid}</td>
                     <td>${proc.memory_mb.toLocaleString()}</td>
-                    <td class="${cpuClass}">${proc.cpu_percent.toFixed(1)}</td>
+                    <td>${proc.cpu_percent.toFixed(1)}</td>
                     <td>${proc.status}</td>
                 `;
                 tbody.appendChild(row);
