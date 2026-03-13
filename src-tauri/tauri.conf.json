@@ -10,7 +10,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "task-manager",
+        "title": "Task manager",
         "width": 800,
         "height": 600
       }
