@@ -66,6 +66,26 @@ async function init() {
             alert(e);
         }
     });
+    await listen('find', async (event) => {
+        const searchTerm = prompt("Enter process name to find:").trim();
+        if (!searchTerm || searchTerm.trim() == "") return;
+        const tbody = document.querySelector('#tasks-list tbody');
+        const rows = Array.from(tbody.rows);
+        const targetRow = rows.find(row => 
+            row.cells[0].textContent.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        if (targetRow) {
+            document.querySelectorAll('tr.selected').forEach(r => r.classList.remove('selected'));
+            targetRow.classList.add('selected');
+            selectedPid = parseInt(targetRow.cells[1].textContent);
+            targetRow.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        } else {
+            alert("Process not found:", searchTerm);
+        }
+    });
 }
 
 window.addEventListener('DOMContentLoaded', init);

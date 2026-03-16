@@ -12,6 +12,7 @@ pub fn run() {
             let menu = MenuBuilder::new(app)
                 .text("kill", "Kill")
                 .text("info", "Info")
+                .text("find", "Find")
                 .build()?;
             let window = app.get_webview_window("main")
                 .expect("main window not found");
@@ -20,6 +21,11 @@ pub fn run() {
                 match event.id().as_ref() {
                     "kill" => {
                         if let Err(e) = app.emit("kill", "") {
+                            eprintln!("Failed to emit: {}", e);
+                        }
+                    }
+                    "find" => {
+                        if let Err(e) = app.emit("find", "") {
                             eprintln!("Failed to emit: {}", e);
                         }
                     }
