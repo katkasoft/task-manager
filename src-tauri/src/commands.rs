@@ -1,5 +1,5 @@
 use sysinfo::{Pid, System};
-use tauri::{AppHandle, Emitter, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 
 #[derive(serde::Serialize)]
 pub struct ProcessData {
@@ -72,10 +72,10 @@ pub fn kill(pid: u32) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn info(pid: u32, handle: AppHandle) -> Result<(), String> {
+pub fn get_process_info(pid: u32) -> Result<DetailedProcessData, String> {
     let mut sys = System::new_all();
     sys.refresh_all();
-    let process_info = sys.process(Pid::from(pid as usize))
+    sys.process(Pid::from(pid as usize))
         .map(|p| DetailedProcessData {
             name: p.name().to_string_lossy().into_owned(),
             pid: p.pid().as_u32(),
@@ -90,17 +90,20 @@ pub fn info(pid: u32, handle: AppHandle) -> Result<(), String> {
             status: format!("{:?}", p.status()).to_lowercase(),
             user_id: p.user_id().map(|u| u.to_string()).unwrap_or_else(|| "N/A".into()),
         })
-        .ok_or_else(|| "Process not found".to_string())?;
-    let webview_window = WebviewWindowBuilder::new(&handle, "info_window", WebviewUrl::App("info.html".into()))
-        .title(format!("Process info: {}", process_info.name))
+        .ok_or_else(|| "Process not found".to_string())
+}
+
+#[tauri::command]
+pub fn info(pid: u32, handle: AppHandle) -> Result<(), String> {
+    if let Some(existing_window) = handle.get_webview_window("info_window") {
+        let _ = existing_window.close();
+    }
+    let url = format!("info.html?pid={}", pid);
+    let _webview_window = WebviewWindowBuilder::new(&handle, "info_window", WebviewUrl::App(url.into()))
+        .title(format!("Process Info"))
         .inner_size(400.0, 600.0)
         .resizable(true)
         .build()
         .map_err(|e| e.to_string())?;
-    let window_clone = webview_window.clone();
-    tauri::async_runtime::spawn(async move {
-        std::thread::sleep(std::time::Duration::from_millis(500));
-        let _ = window_clone.emit("info", process_info);
-    });
     Ok(())
 }

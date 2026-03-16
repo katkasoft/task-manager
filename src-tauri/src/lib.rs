@@ -7,7 +7,7 @@ mod commands;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![commands::tasks_list, commands::kill, commands::info])
+        .invoke_handler(tauri::generate_handler![commands::tasks_list, commands::kill, commands::info, commands::get_process_info])
         .setup(|app| {
             let menu = MenuBuilder::new(app)
                 .text("kill", "Kill")

@@ -67,13 +67,13 @@ async function init() {
         }
     });
     await listen('info', async (event) => {
+        if (!selectedPid) return;
         try {
             await invoke('info', { pid: selectedPid }); 
-            loadTasks();
         } catch (e) {
             alert(e);
         }
-    })
+    });
     await listen('find', async (event) => {
         const searchTerm = prompt("Enter process name to find:").trim();
         if (!searchTerm || searchTerm.trim() == "") return;
