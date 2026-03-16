@@ -101,7 +101,7 @@ pub fn info(pid: u32, handle: AppHandle) -> Result<(), String> {
     let url = format!("info.html?pid={}", pid);
     let _webview_window = WebviewWindowBuilder::new(&handle, "info_window", WebviewUrl::App(url.into()))
         .title(format!("Process Info"))
-        .inner_size(400.0, 600.0)
+        .inner_size(500.0, 650.0)
         .resizable(true)
         .build()
         .map_err(|e| e.to_string())?;

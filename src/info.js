@@ -1,6 +1,9 @@
+const { invoke } = window.__TAURI__.core;
+const root = document.getElementById("root");
+
 async function init() {
     const urlParams = new URLSearchParams(window.location.search);
-    const pid = parseInt(urlParams.get('pid'));
+    const pid = parseInt(urlParams.get('pid')); 
     if (!pid) {
         root.innerHTML = '<p style="color:red;">No PID provided</p>';
         return;
@@ -21,7 +24,6 @@ async function init() {
                     </tr>
                 `).join('')}
             </table>
-            <button onclick="window.close()" style="margin-top: 20px;">Close Window</button>
         `;
     } catch (err) {
         root.innerHTML = `<p style="color:red;">Error fetching process info: ${err}</p>`;
@@ -50,3 +52,5 @@ function formatValue(key, value) {
     }
     return value;
 }
+
+window.addEventListener('DOMContentLoaded', init);
