@@ -7,7 +7,7 @@ mod commands;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![commands::tasks_list, commands::kill])
+        .invoke_handler(tauri::generate_handler![commands::tasks_list, commands::kill, commands::info])
         .setup(|app| {
             let menu = MenuBuilder::new(app)
                 .text("kill", "Kill")
@@ -21,6 +21,11 @@ pub fn run() {
                 match event.id().as_ref() {
                     "kill" => {
                         if let Err(e) = app.emit("kill", "") {
+                            eprintln!("Failed to emit: {}", e);
+                        }
+                    }
+                    "info" => {
+                        if let Err(e) = app.emit("info", "") {
                             eprintln!("Failed to emit: {}", e);
                         }
                     }

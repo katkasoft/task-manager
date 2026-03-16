@@ -1,7 +1,8 @@
 use sysinfo::{Pid, System};
+use tauri::{AppHandle, Emitter, WebviewUrl, WebviewWindowBuilder};
 
 #[derive(serde::Serialize)]
-pub struct ProcessInfo {
+pub struct ProcessData {
     name: String,
     pid: u32,
     memory_mb: u64,
@@ -9,15 +10,31 @@ pub struct ProcessInfo {
     status: String,
 }
 
+#[derive(serde::Serialize, Clone)]
+pub struct DetailedProcessData {
+    name: String,
+    pid: u32,
+    parent_pid: Option<u32>,
+    exe: String,
+    args: Vec<String>,
+    memory_mb: u64,
+    virtual_memory_mb: u64,
+    cpu_percent: f32,
+    start_time: u64,
+    run_time: u64,
+    status: String,
+    user_id: String,
+}
+
 #[tauri::command]
-pub fn tasks_list() -> Result<Vec<ProcessInfo>, String> {
+pub fn tasks_list() -> Result<Vec<ProcessData>, String> {
     let mut sys = System::new_all();
     sys.refresh_all();
-    let processes: Vec<ProcessInfo> = sys.processes()
+    let processes: Vec<ProcessData> = sys.processes()
         .values()
         .map(|p| {
             let name = p.name().to_string_lossy().into_owned();
-            ProcessInfo {
+            ProcessData {
                 name,
                 pid: p.pid().as_u32(),
                 memory_mb: p.memory() / 1024 / 1024,
@@ -52,4 +69,38 @@ pub fn kill(pid: u32) -> Result<(), String> {
     } else {
         Err(format!("Process with PID {} not found", pid))
     }
+}
+
+#[tauri::command]
+pub fn info(pid: u32, handle: AppHandle) -> Result<(), String> {
+    let mut sys = System::new_all();
+    sys.refresh_all();
+    let process_info = sys.process(Pid::from(pid as usize))
+        .map(|p| DetailedProcessData {
+            name: p.name().to_string_lossy().into_owned(),
+            pid: p.pid().as_u32(),
+            parent_pid: p.parent().map(|id| id.as_u32()),
+            exe: p.exe().map(|path| path.to_string_lossy().into_owned()).unwrap_or_default(),
+            args: p.cmd().iter().map(|s| s.to_string_lossy().into_owned()).collect(),
+            memory_mb: p.memory() / 1024 / 1024,
+            virtual_memory_mb: p.virtual_memory() / 1024 / 1024,
+            cpu_percent: p.cpu_usage(),
+            start_time: p.start_time(),
+            run_time: p.run_time(),
+            status: format!("{:?}", p.status()).to_lowercase(),
+            user_id: p.user_id().map(|u| u.to_string()).unwrap_or_else(|| "N/A".into()),
+        })
+        .ok_or_else(|| "Process not found".to_string())?;
+    let webview_window = WebviewWindowBuilder::new(&handle, "info_window", WebviewUrl::App("info.html".into()))
+        .title(format!("Process info: {}", process_info.name))
+        .inner_size(400.0, 600.0)
+        .resizable(true)
+        .build()
+        .map_err(|e| e.to_string())?;
+    let window_clone = webview_window.clone();
+    tauri::async_runtime::spawn(async move {
+        std::thread::sleep(std::time::Duration::from_millis(500));
+        let _ = window_clone.emit("info", process_info);
+    });
+    Ok(())
 }
