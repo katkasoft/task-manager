@@ -1,5 +1,6 @@
-// script.js
 const { invoke } = window.__TAURI__.core;
+const { listen } = window.__TAURI__.event;
+let selectedPid = null;
 
 async function loadTasks() {
     try {
@@ -30,8 +31,23 @@ async function loadTasks() {
                     <td>${proc.status}</td>
                 `;
                 tbody.appendChild(row);
+                row.addEventListener('click', () => {
+                    document.querySelectorAll('tr.selected').forEach(r => r.classList.remove('selected'));
+                    row.classList.add('selected');
+                    selectedPid = proc.pid;
+                    console.log('Selected PID:', selectedPid);
+                });
+
             });
         table.appendChild(tbody);
+        if (selectedPid !== null) {
+            Array.from(tbody.rows).forEach(row => {
+                const pidCell = row.cells[1];
+                if (pidCell && parseInt(pidCell.textContent) === selectedPid) {
+                    row.classList.add('selected');
+                }
+            });
+        }
     } catch (err) {
         console.error("Error getting processes:", err);
         document.body.innerHTML += `<p style="color:red; text-align:center;">Error getting processes: ${err}</p>`;
@@ -41,6 +57,15 @@ async function loadTasks() {
 async function init() {
     await loadTasks();
     setInterval(loadTasks, 5000);
+    await listen('kill', async (event) => {
+        if (!selectedPid) return;
+        try {
+            await invoke('kill', { pid: selectedPid }); 
+            loadTasks();
+        } catch (e) {
+            alert(e);
+        }
+    });
 }
 
 window.addEventListener('DOMContentLoaded', init);

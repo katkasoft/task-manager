@@ -1,4 +1,4 @@
-use sysinfo::System;
+use sysinfo::{Pid, System};
 
 #[derive(serde::Serialize)]
 pub struct ProcessInfo {
@@ -37,4 +37,19 @@ pub fn tasks_list() -> Result<Vec<ProcessInfo>, String> {
         .collect();
 
     Ok(processes)
+}
+
+#[tauri::command]
+pub fn kill(pid: u32) -> Result<(), String> {
+    let mut s = System::new_all();
+    s.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+    if let Some(process) = s.process(Pid::from(pid as usize)) {
+        if process.kill() {
+            Ok(())
+        } else {
+            Err(format!("Error killing process with PID {}. Permission denied", pid))
+        }
+    } else {
+        Err(format!("Process with PID {} not found", pid))
+    }
 }

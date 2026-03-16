@@ -44,3 +44,7 @@ table {
     border-collapse: separate;
     border-spacing: 0;
 }
+
+tr.selected {
+    background: #4a90d9 !important;
+}
